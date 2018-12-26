@@ -19,39 +19,23 @@ const app=express();
 app.use(bodyParser.json());
 app.use(cors());
 
-const database={
-	users:[
-		{
-			id:'123',
-			name:'John',
-			email:'John@gmail.com',
-			password:'cookies',
-			entries:0,
-			joined:new Date()
-		},
-		{
-			id:'123',
-			name:'John',
-			email:'John@gmail.com',
-			password:'cookies',
-			entries:0,
-			joined:new Date()
-		}
-	]
-}
 
 app.get('/',(req,res)=>{
 	res.send(database.users);
 })
 
 app.post('/signin', (req,res)=>{	
+	const{email, password}=req.body;
+	if(!email||!password){
+		return res.status(400).json('incorrect form submission');
+	}
 	db.select('email','hash').from('login')
-		.where('email','=',req.body.email)
+		.where('email','=',email)
 		.then(data=>{
-			const isValid=bcrypt.compareSync(req.body.password, data[0].hash);
+			const isValid=bcrypt.compareSync(password, data[0].hash);
 			if(isValid){
 				return db.select('*').from('users')
-					.where('email','=',req.body.email)
+					.where('email','=',email)
 					.then(user=>{
 						res.json(user[0])
 					})
@@ -66,6 +50,9 @@ app.post('/signin', (req,res)=>{
 
 app.post('/register', (req,res)=>{	
 	const{email, name, password}=req.body;
+	if(!email||!name||!password){
+		return res.status(400).json('incorrect form submission');
+	}
 	const saltRounds = 10;
 	const salt = bcrypt.genSaltSync(saltRounds);
 	const hash=bcrypt.hashSync(password,salt);
